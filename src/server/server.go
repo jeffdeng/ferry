@@ -1,20 +1,38 @@
 
-package main
+package server
 
 import (
     "net"
 )
 
-const ( maxRead = 1024)
+const ( maxRead = 1024 )
 
-func main() {
 
-    println("A")
-    initServer("127.0.0.1:6226")
+type IAuth interface {
+    SignIn(username, password string)(bool)
 }
 
-func initServer(address string) {
-    serverAddr, err := net.ResolveTCPAddr("tcp", address)
+func canSignIn(auth IAuth, username, password string) bool {
+    return auth.SignIn(username, password)
+}
+
+type IConnectionHandler interface {
+    MessageReceived(conn net.Conn, msg []byte, length int) error;
+}
+
+type Server struct {
+    address string
+}
+
+func (s *Server) Start(address string) (err error) {
+    s.address = address
+    s.initServer()
+    return nil
+}
+
+
+func (s *Server) initServer() {
+    serverAddr, err := net.ResolveTCPAddr("tcp", s.address)
     if err == nil {
         listener, _ := net.ListenTCP("tcp", serverAddr)
         println("Listening to: ", listener.Addr().String())
