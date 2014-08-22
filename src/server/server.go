@@ -68,8 +68,6 @@ func (s Server) acceptHandler(conn net.Conn) {
             s.connMgr.Attach(conn)
         }
     }
-
-    print("D")
 }
 
 func connectionHandler(conn net.Conn) {
