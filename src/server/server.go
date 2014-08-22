@@ -62,12 +62,14 @@ func (s Server) acceptHandler(conn net.Conn) {
     length, err := conn.Read(buffer[0 : maxRead])
     buffer[maxRead] = 0 // to prevent overflow
 
-    if err != nil {
+    if err == nil {
         msg := string(buffer[0: length])
-        if s.connMgr.Accepted(msg) != nil {
+        if s.connMgr.Accepted(msg) == nil {
             s.connMgr.Attach(conn)
         }
     }
+
+    print("D")
 }
 
 func connectionHandler(conn net.Conn) {

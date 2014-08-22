@@ -41,7 +41,7 @@ func (connMgr BizConnectionManager) Accepted(msg string) error {
 }
 
 func (connMgr BizConnectionManager) Attach(conn net.Conn) error {
-	
+	print(conn)
 	return nil
 }
 
