@@ -16,22 +16,31 @@ func canSignIn(auth IAuth, username, password string) bool {
     return auth.SignIn(username, password)
 }
 
+
+type IConnectionManager interface {
+    Accepted(msg string) error;
+    Attach(conn net.Conn) error;
+}
+
 type IConnectionHandler interface {
     MessageReceived(conn net.Conn, msg []byte, length int) error;
 }
 
 type Server struct {
     address string
+    connMgr IConnectionManager
 }
 
-func (s *Server) Start(address string) (err error) {
+func (s Server) Start(address string, connMgr IConnectionManager) error {
+
     s.address = address
+    s.connMgr = connMgr
     s.initServer()
     return nil
 }
 
 
-func (s *Server) initServer() {
+func (s Server) initServer() {
     serverAddr, err := net.ResolveTCPAddr("tcp", s.address)
     if err == nil {
         listener, _ := net.ListenTCP("tcp", serverAddr)
@@ -39,10 +48,24 @@ func (s *Server) initServer() {
         for {
             conn, err := listener.Accept()
             if err == nil {
-                go connectionHandler(conn)
+                go s.acceptHandler(conn)
             } else {
                 println(err)
             }
+        }
+    }
+}
+
+func (s Server) acceptHandler(conn net.Conn) {
+
+    var buffer []byte = make([]byte, maxRead + 1)
+    length, err := conn.Read(buffer[0 : maxRead])
+    buffer[maxRead] = 0 // to prevent overflow
+
+    if err != nil {
+        msg := string(buffer[0: length])
+        if s.connMgr.Accepted(msg) != nil {
+            s.connMgr.Attach(conn)
         }
     }
 }
