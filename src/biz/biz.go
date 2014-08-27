@@ -1,8 +1,8 @@
-
 package main
 
 import (
-	"../server"
+	"../xmpp"
+	"errors"
 	"redis"
 	"net"
 )
@@ -29,14 +29,19 @@ func (handler BizConnection) SignIn(username, password string)(bool) {
     return true
 }
 
-
-
 type BizConnectionManager struct {
-
+	connections map[string]net.Conn
 }
 
-func (connMgr BizConnectionManager) Accepted(msg string) error {
+func (connMgr BizConnectionManager) initialize() error {
+	
+	connMgr.connections = make(map[string]net.Conn)
+	return nil
+}
+
+func (connMgr BizConnectionManager) Accepted(msg string, conn net.Conn) error {
 	print(msg)
+	// TODO: Check session
 	return nil
 }
 
@@ -45,10 +50,22 @@ func (connMgr BizConnectionManager) Attach(conn net.Conn) error {
 	return nil
 }
 
+func (connMgr BizConnectionManager) Lookup(name string) (conn net.Conn, err error) {
+	conn, found := connMgr.connections[name]
+	if found {
+		return conn, nil
+	}
+	return nil, errors.New("")
+}
 
 func main() {
 
-	server := new(server.Server);
+	server := new(xmpp.Server);
+	server.Derived = server
 	connMgr := BizConnectionManager{}
+	connMgr.initialize()
 	server.Start("127.0.0.1:6226", connMgr)
+	if server != nil {
+
+	}
 }
