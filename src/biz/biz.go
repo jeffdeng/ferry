@@ -1,71 +1,39 @@
 package main
 
 import (
-	"../xmpp"
-	"errors"
-	"redis"
-	"net"
+	"net/http"
 )
 
-
-
-type BizConnection struct {
-	
+func helloHandler(response http.ResponseWriter, request *http.Request) {
+	response.Write([]byte("Scada.Data.Server"))
 }
 
+func getHandler(response http.ResponseWriter, request *http.Request) {
 
-func (handler BizConnection) MessageReceived(conn net.Conn, msg []byte, length int) error {
-
-	return nil;
+	response.Write([]byte("Scada.Data.Server"))
 }
 
-func (handler BizConnection) SignIn(username, password string)(bool) {
+func setHandler(response http.ResponseWriter, request *http.Request) {
 
-    spec := redis.DefaultSpec().Host("127.0.0.1").Port(6380)
-    client, _ := redis.NewSynchClientWithSpec(spec)
-
-    value, _ := client.Llen("s:q")
-    print(value)
-    return true
+	response.Write([]byte("Scada.Data.Server"))
 }
 
-type BizConnectionManager struct {
-	connections map[string]net.Conn
-}
+func queryHandler(response http.ResponseWriter, request *http.Request) {
 
-func (connMgr BizConnectionManager) initialize() error {
-	
-	connMgr.connections = make(map[string]net.Conn)
-	return nil
-}
-
-func (connMgr BizConnectionManager) Accepted(msg string, conn net.Conn) error {
-	print(msg)
-	// TODO: Check session
-	return nil
-}
-
-func (connMgr BizConnectionManager) Attach(conn net.Conn) error {
-	print(conn)
-	return nil
-}
-
-func (connMgr BizConnectionManager) Lookup(name string) (conn net.Conn, err error) {
-	conn, found := connMgr.connections[name]
-	if found {
-		return conn, nil
-	}
-	return nil, errors.New("")
+	response.Write([]byte("Scada.Data.Server"))
 }
 
 func main() {
+	//http.Handle("/css/", http.FileServer(http.Dir("template")))
+	//http.Handle("/js/", http.FileServer(http.Dir("template")))
 
-	server := new(xmpp.Server);
-	server.Derived = server
-	connMgr := BizConnectionManager{}
-	connMgr.initialize()
-	server.Start("127.0.0.1:6226", connMgr)
-	if server != nil {
+	http.HandleFunc("/hello", helloHandler)
 
-	}
+	http.HandleFunc("/get", getHandler)
+	http.HandleFunc("/set", setHandler)
+
+	http.HandleFunc("/query", queryHandler)
+
+	http.ListenAndServe(":8888", nil)
+
 }
