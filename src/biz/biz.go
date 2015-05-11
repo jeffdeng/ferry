@@ -41,14 +41,6 @@ func (s *Server) start() {
 		println("database initialize error : ", err.Error())
 	}
 
-	rows, err := db.Query("SELECT user_id, nick_name FROM xjy_main.xjy_user where user_id=?", 1513)
-	defer rows.Close()
-	var id int
-	var name string
-	for rows.Next() {
-		_ = rows.Scan(&id, &name)
-		println(id, name)
-	}
 	//http.ListenAndServe(":8888", nil)
 }
 
@@ -80,6 +72,40 @@ func (s *Server) getValue(packet Packet) (interface{}, error) {
 	return s.Cache.GetValue(params[0])
 }
 
+func (s *Server) query(packet Packet) ([]interface{}, error) {
+
+	params := packet.Params
+	if len(params) < 0 {
+		return nil, errors.New("Wrong number of params")
+	}
+
+	queryStr := params[0]
+	db := s.DataConnection
+
+	rows, err := db.Query(queryStr)
+	defer rows.Close()
+	columns, err := rows.Columns()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	values := make([]sql.RawBytes, len(columns))
+
+	// rows.Scan wants '[]interface{}' as an argument, so we must copy the
+	// references into such a slice
+	// See http://code.google.com/p/go-wiki/wiki/InterfaceSlice for details
+	scanArgs := make([]interface{}, len(values))
+	for i := range values {
+		scanArgs[i] = &values[i]
+	}
+
+	for rows.Next() {
+		_ = rows.Scan(scanArgs)
+		//println(id, name)
+	}
+	return nil, nil
+}
+
 func (s *Server) sendData(response http.ResponseWriter, data interface{}) {
 	switch value := data.(type) {
 	case string:
@@ -102,9 +128,11 @@ func mainHandler(response http.ResponseWriter, request *http.Request) {
 			} else if packet.Command == "get-value" {
 				value, _ := BizServer.getValue(packet)
 				BizServer.sendData(response, value)
-			} else if packet.Command == "get-value" {
+			} else if packet.Command == "query" {
 
-			} else if packet.Command == "get-value" {
+			} else if packet.Command == "echo" {
+
+			} else if packet.Command == "" {
 
 			}
 
