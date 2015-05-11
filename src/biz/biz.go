@@ -3,6 +3,7 @@ package main
 import (
 	"../server"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -10,7 +11,7 @@ import (
 
 type Packet struct {
 	Command string                 `json:"cmd"`
-	Params  []interface{}          `json:"params"`
+	Params  []string               `json:"params"`
 	Sender  string                 `json:"sender"`
 	Content map[string]interface{} `json:"content"`
 }
@@ -33,7 +34,10 @@ func (s *Server) start() {
 }
 
 func (s *Server) setValue(packet Packet) {
-	//params := packet.Params
+	params := packet.Params
+	if len(params) < 0 {
+		return
+	}
 	/**/
 	for k, v := range packet.Content {
 		switch value := v.(type) {
@@ -44,12 +48,25 @@ func (s *Server) setValue(packet Packet) {
 		}
 	}
 
-	bs, _ := json.Marshal(packet.Content)
-	println(string(bs))
+	bytes, _ := json.Marshal(packet.Content)
+	s.Cache.SetValue(params[0], string(bytes))
 }
 
-func (s *Server) getValue(packet Packet) {
+func (s *Server) getValue(packet Packet) (interface{}, error) {
+	params := packet.Params
+	if len(params) < 0 {
+		return "", errors.New("Wrong number of params")
+	}
 
+	return s.Cache.GetValue(params[0])
+}
+
+func (s *Server) sendData(response http.ResponseWriter, data interface{}) {
+	switch value := data.(type) {
+	case string:
+		response.Write([]byte(value))
+
+	}
 }
 
 func mainHandler(response http.ResponseWriter, request *http.Request) {
@@ -64,7 +81,8 @@ func mainHandler(response http.ResponseWriter, request *http.Request) {
 			if packet.Command == "set-value" {
 				BizServer.setValue(packet)
 			} else if packet.Command == "get-value" {
-				BizServer.getValue(packet)
+				value, _ := BizServer.getValue(packet)
+				BizServer.sendData(response, value)
 			} else if packet.Command == "get-value" {
 
 			} else if packet.Command == "get-value" {
