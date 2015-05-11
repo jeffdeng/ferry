@@ -2,8 +2,10 @@ package main
 
 import (
 	"../server"
+	"database/sql"
 	"encoding/json"
 	"errors"
+	_ "github.com/go-sql-driver/mysql"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -17,7 +19,8 @@ type Packet struct {
 }
 
 type Server struct {
-	Cache *server.Cache
+	Cache          *server.Cache
+	DataConnection *sql.DB
 }
 
 var BizServer Server
@@ -30,7 +33,23 @@ func (s *Server) start() {
 	v, _ := s.Cache.GetIntValue("start-time")
 	println(v)
 
-	http.ListenAndServe(":8888", nil)
+	// Here
+	db, err := sql.Open("mysql", "root:123@/xjy_main?charset=utf8")
+	if err == nil {
+		s.DataConnection = db
+	} else {
+		println("database initialize error : ", err.Error())
+	}
+
+	rows, err := db.Query("SELECT user_id, nick_name FROM xjy_main.xjy_user where user_id=?", 1513)
+	defer rows.Close()
+	var id int
+	var name string
+	for rows.Next() {
+		_ = rows.Scan(&id, &name)
+		println(id, name)
+	}
+	//http.ListenAndServe(":8888", nil)
 }
 
 func (s *Server) setValue(packet Packet) {
