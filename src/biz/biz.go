@@ -41,7 +41,7 @@ func (s *Server) start() {
 		println("database initialize error : ", err.Error())
 	}
 
-	//http.ListenAndServe(":8888", nil)
+	http.ListenAndServe(":8888", nil)
 }
 
 func (s *Server) setValue(packet Packet) {
@@ -49,27 +49,35 @@ func (s *Server) setValue(packet Packet) {
 	if len(params) < 0 {
 		return
 	}
-	/**/
-	for k, v := range packet.Content {
-		switch value := v.(type) {
-		case string:
-			print(k, value)
-		case float64:
-			print(k, int64(value))
+	/*
+		for k, v := range packet.Content {
+			switch value := v.(type) {
+			case string:
+				//print(k, value)
+			case float64:
+				//print(k, int64(value))
+			}
 		}
-	}
+	*/
 
 	bytes, _ := json.Marshal(packet.Content)
 	s.Cache.SetValue(params[0], string(bytes))
 }
 
-func (s *Server) getValue(packet Packet) (interface{}, error) {
+func (s *Server) getValue(packet Packet) (string, error) {
 	params := packet.Params
 	if len(params) < 0 {
 		return "", errors.New("Wrong number of params")
 	}
-
-	return s.Cache.GetValue(params[0])
+	arr := []interface{}{}
+	for _, v := range params {
+		val, _ := s.Cache.GetValue(v)
+		arr = append(arr, val)
+	}
+	print(":Len=")
+	println(len(arr))
+	bytes, _ := json.Marshal(arr)
+	return string(bytes), nil
 }
 
 func (s *Server) query(packet Packet) ([]interface{}, error) {
@@ -106,12 +114,17 @@ func (s *Server) query(packet Packet) ([]interface{}, error) {
 	return nil, nil
 }
 
-func (s *Server) sendData(response http.ResponseWriter, data interface{}) {
-	switch value := data.(type) {
-	case string:
-		response.Write([]byte(value))
+func (s *Server) sendData(response http.ResponseWriter, data string) {
+	/*
+		switch value := data.(type) {
+		case string:
 
-	}
+		}*/
+
+	response.Write([]byte(data))
+	println("----")
+	println(data)
+	println("----")
 }
 
 func mainHandler(response http.ResponseWriter, request *http.Request) {
