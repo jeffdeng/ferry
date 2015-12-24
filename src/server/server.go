@@ -1,10 +1,18 @@
-package server
+package main
 
 import (
-//"crypto/tls"
-//"net"
+	"github.com/astaxie/beego"
 )
 
-const (
-	maxRead = 1024
-)
+type MainController struct {
+	beego.Controller
+}
+
+func (this *MainController) Get() {
+	this.Ctx.WriteString("hello world")
+}
+
+func main() {
+	beego.Router("/", &MainController{})
+	beego.Run()
+}
